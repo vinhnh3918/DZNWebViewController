@@ -11,7 +11,7 @@
 #import "DZNWebViewController.h"
 #import "DZNPolyActivity.h"
 
-#define DZN_IS_IPAD ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad)
+#define DZN_IS_IPAD [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad
 #define DZN_IS_LANDSCAPE ([UIApplication sharedApplication].statusBarOrientation == UIInterfaceOrientationLandscapeLeft || [UIApplication sharedApplication].statusBarOrientation == UIInterfaceOrientationLandscapeRight)
 
 static char DZNWebViewControllerKVOContext = 0;
@@ -65,6 +65,7 @@ static char DZNWebViewControllerKVOContext = 0;
 
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
     [self commonInit];
 }
 
@@ -72,10 +73,10 @@ static char DZNWebViewControllerKVOContext = 0;
 {
     self.supportedWebNavigationTools = DZNWebNavigationToolAll;
     self.supportedWebActions = DZNWebActionAll;
-    self.webNavigationPrompt = DZNWebNavigationPromptAll;
     self.showLoadingProgress = YES;
     self.hideBarsWithGestures = YES;
     self.allowHistory = YES;
+    self.showPageTitleAndURL = YES;
     
     self.webView = [[DZNWebView alloc] initWithFrame:self.view.bounds configuration:[WKWebViewConfiguration new]];
     self.webView.backgroundColor = [UIColor whiteColor];
@@ -133,14 +134,14 @@ static char DZNWebViewControllerKVOContext = 0;
 
 - (void)viewWillDisappear:(BOOL)animated
 {
-	[super viewWillDisappear:animated];
+    [super viewWillDisappear:animated];
     
     [self clearProgressViewAnimated:animated];
 }
 
 - (void)viewDidDisappear:(BOOL)animated
 {
-	[super viewDidDisappear:animated];
+    [super viewDidDisappear:animated];
     
     [self.webView stopLoading];
 }
@@ -362,8 +363,14 @@ static char DZNWebViewControllerKVOContext = 0;
 
 - (void)setTitle:(NSString *)title
 {
-    if (self.webNavigationPrompt == DZNWebNavigationPromptNone) {
+    NSLog(@"url: %@", self.webView.URL.absoluteString);
+    if (!self.showPageTitleAndURL) {
         [super setTitle:title];
+        return;
+    }
+    
+    if (title.length == 0) {
+        [super setTitle:@"Đang tải..."];
         return;
     }
     
@@ -379,30 +386,21 @@ static char DZNWebViewControllerKVOContext = 0;
         self.navigationItem.titleView = label;
     }
     
-    UIFont *titleFont = self.navigationBar.titleTextAttributes[NSFontAttributeName] ? : [UIFont boldSystemFontOfSize:14.0];
+    UIFont *titleFont = self.navigationBar.titleTextAttributes[NSFontAttributeName] ?: [UIFont boldSystemFontOfSize:12.0];
     UIFont *urlFont = [UIFont fontWithName:titleFont.fontName size:titleFont.pointSize-2.0];
-    UIColor *textColor = self.navigationBar.titleTextAttributes[NSForegroundColorAttributeName] ? : [UIColor blackColor];
+    UIColor *textColor = self.navigationBar.titleTextAttributes[NSForegroundColorAttributeName] ?: [UIColor blackColor];
     
-    NSMutableString *text = [NSMutableString new];
+    NSMutableString *text = [NSMutableString stringWithString:title];
     
-    if (title.length > 0 && self.showNavigationPromptTitle) {
-        [text appendFormat:@"%@", title];
-        
-        if (url.length > 0 && self.showNavigationPromptURL) {
-            [text appendFormat:@"\n"];
-        }
-    }
-    
-    if (url.length > 0 && self.showNavigationPromptURL) {
-        [text appendFormat:@"%@", url];
+    if (url.length > 0) {
+        [text appendFormat:@"\n%@", url];
     }
     
     NSDictionary *attributes = @{NSFontAttributeName: titleFont, NSForegroundColorAttributeName: textColor};
     NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:text attributes:attributes];
-    NSRange urlRange = [text rangeOfString:url];
-
-    if (urlRange.location != NSNotFound && self.showNavigationPromptTitle) {
-        [attributedString addAttribute:NSFontAttributeName value:urlFont range:urlRange];
+    
+    if (url.length > 0) {
+        [attributedString addAttribute:NSFontAttributeName value:urlFont range:[text rangeOfString:url]];
     }
     
     label.attributedText = attributedString;
@@ -411,6 +409,15 @@ static char DZNWebViewControllerKVOContext = 0;
     CGRect frame = label.frame;
     frame.size.height = CGRectGetHeight(self.navigationController.navigationBar.frame);
     label.frame = frame;
+}
+
+// setHeaderFields
+- (void)setHeaderFields:(NSDictionary *)headerFields
+{
+    if ([self.headerFields isEqual:headerFields]) {
+        return;
+    }
+    _headerFields = headerFields;
 }
 
 // Sets the request errors with an alert view.
@@ -425,22 +432,6 @@ static char DZNWebViewControllerKVOContext = 0;
     
     UIAlertView *alert = [[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Error", nil) message:error.localizedDescription delegate:nil cancelButtonTitle:NSLocalizedString(@"OK", nil) otherButtonTitles: nil];
     [alert show];
-}
-
-- (BOOL)showNavigationPromptTitle
-{
-    if ((self.webNavigationPrompt & DZNWebNavigationPromptTitle) > 0 || self.webNavigationPrompt == DZNWebNavigationPromptAll) {
-        return YES;
-    }
-    return NO;
-}
-
-- (BOOL)showNavigationPromptURL
-{
-    if ((self.webNavigationPrompt & DZNWebNavigationPromptURL) > 0 || self.webNavigationPrompt == DZNWebNavigationPromptAll) {
-        return YES;
-    }
-    return NO;
 }
 
 
@@ -461,7 +452,11 @@ static char DZNWebViewControllerKVOContext = 0;
         [self.webView loadHTMLString:HTMLString baseURL:baseURL];
     }
     else {
-        NSURLRequest *request = [[NSURLRequest alloc] initWithURL:URL];
+        NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:URL cachePolicy:1 timeoutInterval:10.0];
+        for (NSString *key in self.headerFields.allKeys) {
+            id value = self.headerFields[key];
+            [request addValue:value forHTTPHeaderField:key];
+        }
         [self.webView loadRequest:request];
     }
 }
@@ -693,7 +688,7 @@ static char DZNWebViewControllerKVOContext = 0;
 
 - (void)webView:(DZNWebView *)webView didFinishNavigation:(WKNavigation *)navigation
 {
-    if (self.webNavigationPrompt > DZNWebNavigationPromptNone) {
+    if (self.showPageTitleAndURL) {
         self.title = self.webView.title;
     }
 }
@@ -706,12 +701,12 @@ static char DZNWebViewControllerKVOContext = 0;
     switch (error.code) {
         case NSURLErrorCancelled:   return;
     }
-
+    
     self.title = nil;
 }
 
 
-#pragma mark - WKUIDelegate methods
+#pragma mark - WKUIDelegate
 
 - (DZNWebView *)webView:(DZNWebView *)webView createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration forNavigationAction:(WKNavigationAction *)navigationAction windowFeatures:(WKWindowFeatures *)windowFeatures
 {
@@ -866,11 +861,6 @@ static char DZNWebViewControllerKVOContext = 0;
 - (void)didReceiveMemoryWarning
 {
     [super didReceiveMemoryWarning];
-}
-
-- (void)viewDidUnload
-{
-    [super viewDidUnload];
 }
 
 - (void)dealloc

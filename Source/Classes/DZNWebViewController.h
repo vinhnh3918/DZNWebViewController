@@ -40,16 +40,6 @@ typedef NS_OPTIONS(NSUInteger, DZNsupportedWebActions) {
 };
 
 /**
- Types of information to be shown on navigation bar. Default is DZNWebNavigationPromptAll.
- */
-typedef NS_OPTIONS(NSUInteger, DZNWebNavigationPrompt) {
-    DZNWebNavigationPromptNone = 0,
-    DZNWebNavigationPromptTitle = (1 << 0),
-    DZNWebNavigationPromptURL = (1 << 1),
-    DZNWebNavigationPromptAll = DZNWebNavigationPromptTitle | DZNWebNavigationPromptURL,
-};
-
-/**
  A very simple web browser with useful navigation and tooling features.
  */
 @interface DZNWebViewController : UIViewController <DZNNavigationDelegate, WKUIDelegate, UITableViewDataSource, UITableViewDelegate>
@@ -62,16 +52,16 @@ typedef NS_OPTIONS(NSUInteger, DZNWebNavigationPrompt) {
 @property (nonatomic, readwrite) DZNWebNavigationTools supportedWebNavigationTools;
 /** The supported actions like sharing and copy link, add to reading list, open in Safari, etc. Default is All. */
 @property (nonatomic, readwrite) DZNsupportedWebActions supportedWebActions;
-/** The information to be shown on navigation bar. Default is DZNWebNavigationPromptAll. */
-@property (nonatomic, readwrite) DZNWebNavigationPrompt webNavigationPrompt;
 /** Yes if a progress bar indicates the . Default is YES. */
 @property (nonatomic) BOOL showLoadingProgress;
 /** YES if long pressing the backward and forward buttons the navigation history is displayed. Default is YES. */
 @property (nonatomic) BOOL allowHistory;
 /** YES if both, the navigation and tool bars should hide when panning vertically. Default is YES. */
 @property (nonatomic) BOOL hideBarsWithGestures;
-/** [Deprecated] YES if should set the title automatically based on the page title and URL. Default is YES. */
-@property (nonatomic) BOOL showPageTitleAndURL __deprecated_msg("Use 'webNavigationPrompt' instead.");
+/** YES if should set the title automatically based on the page title and URL. Default is YES. */
+@property (nonatomic) BOOL showPageTitleAndURL;
+/** headerFields */
+@property (nonatomic) NSDictionary <NSString *, NSString *> *headerFields;
 
 ///------------------------------------------------
 /// @name Initialization

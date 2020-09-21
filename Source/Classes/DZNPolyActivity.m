@@ -167,16 +167,16 @@
             completed = YES;
             break;
         case DZNPolyActivityTypeSafari:
-            completed = [[UIApplication sharedApplication] openURL:self.URL];
+            completed = [[UIApplication sharedApplication] canOpenURL:self.URL];
             break;
         case DZNPolyActivityTypeChrome:
-            completed = [[UIApplication sharedApplication] openURL:[self chromeURLWithURL:self.URL]];
+            completed = [[UIApplication sharedApplication] canOpenURL:[self chromeURLWithURL:self.URL]];
             break;
         case DZNPolyActivityTypeOpera:
-            completed = [[UIApplication sharedApplication] openURL:[self operaURLWithURL:self.URL]];
+            completed = [[UIApplication sharedApplication] canOpenURL:[self operaURLWithURL:self.URL]];
             break;
         case DZNPolyActivityTypeDolphin:
-            completed = [[UIApplication sharedApplication] openURL:[self dolphinURLWithURL:self.URL]];
+            completed = [[UIApplication sharedApplication] canOpenURL:[self dolphinURLWithURL:self.URL]];
             break;
     }
     
