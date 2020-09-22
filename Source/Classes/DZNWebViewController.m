@@ -649,6 +649,17 @@ static char DZNWebViewControllerKVOContext = 0;
 
 #pragma mark - DZNNavigationDelegate methods
 
+- (void)webView:(DZNWebView *)webView decidePolicyForNavigationResponse:(WKNavigationResponse *)navigationResponse decisionHandler:(void (^)(WKNavigationResponsePolicy))decisionHandler {
+    NSHTTPURLResponse *response = (NSHTTPURLResponse *)navigationResponse.response;
+    NSString *urlString = [[response URL] absoluteString];
+    if ([[NSString stringWithFormat:@"%@", urlString] containsString:@"zalopay"] || [[NSString stringWithFormat:@"%@", urlString] containsString:@"momo"]) {
+        [[UIApplication sharedApplication] openURL:[response URL] options:@{} completionHandler:nil];
+        decisionHandler(WKNavigationResponsePolicyCancel);
+    } else {
+        decisionHandler(WKNavigationResponsePolicyAllow);
+    }
+}
+
 - (void)webView:(DZNWebView *)webView didStartProvisionalNavigation:(WKNavigation *)navigation
 {
     [self updateStateBarItem];
