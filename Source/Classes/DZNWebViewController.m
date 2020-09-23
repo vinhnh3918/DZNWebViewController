@@ -363,7 +363,6 @@ static char DZNWebViewControllerKVOContext = 0;
 
 - (void)setTitle:(NSString *)title
 {
-    NSLog(@"url: %@", self.webView.URL.absoluteString);
     if (!self.showPageTitleAndURL) {
         [super setTitle:title];
         return;
@@ -652,8 +651,10 @@ static char DZNWebViewControllerKVOContext = 0;
 - (void)webView:(DZNWebView *)webView decidePolicyForNavigationResponse:(WKNavigationResponse *)navigationResponse decisionHandler:(void (^)(WKNavigationResponsePolicy))decisionHandler {
     NSHTTPURLResponse *response = (NSHTTPURLResponse *)navigationResponse.response;
     NSString *urlString = [[response URL] absoluteString];
-    if ([[NSString stringWithFormat:@"%@", urlString] containsString:@"zalopay"] || [[NSString stringWithFormat:@"%@", urlString] containsString:@"momo"]) {
+    if ([[NSString stringWithFormat:@"%@", urlString] containsString:@"zalopay.vn"] || [[NSString stringWithFormat:@"%@", urlString] containsString:@"momo.vn"]) {
         [[UIApplication sharedApplication] openURL:[response URL] options:@{} completionHandler:nil];
+        self.webView.navigationDelegate = nil;
+        [self dismissViewControllerAnimated:YES completion:nil];
         decisionHandler(WKNavigationResponsePolicyCancel);
     } else {
         decisionHandler(WKNavigationResponsePolicyAllow);
